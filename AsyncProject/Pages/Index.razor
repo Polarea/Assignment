@@ -1,0 +1,8 @@
+﻿@page "/"
+
+<PageTitle>Index</PageTitle>
+
+<h3>Count </h3><input @bind="count" />
+<h3>Delay </h3><input @bind="delay" />
+<button @onclick="()=>Calc(count,delay)">Start</button>
+<h3>@message</h3>

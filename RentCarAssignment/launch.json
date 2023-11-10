@@ -1,0 +1,20 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: [1](https://go.microsoft.com/fwlink/?linkid=830387)
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Launch (console)",
+      "type": "clr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/cAppVSCode/bin/Debug/cAppVSCode.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "internalConsoleOptions": "openOnSessionStart"
+    }
+  ]
+}

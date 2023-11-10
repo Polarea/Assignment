@@ -1,0 +1,164 @@
+﻿@page "/"
+@using RentACar.Business.Classes;
+@using RentACar.Common.Classes;
+@using RentACar.Common.Enums;
+@inject BookingProcessor bookingProcessor
+
+<PageTitle>Index</PageTitle>
+<p class="h5">Vehicles</p>
+<table class="table table-striped">
+	<thead class="table-primary">
+		<tr>
+			<th scope="col">Reg.No.</th>
+			<th scope="col">Brand</th>
+			<th scope="col">Odometer</th>
+			<th scope="col">Cost/Km</th>
+			<th scope="col">Vehicle Type</th>
+			<th scope="col">Cost/Day</th>
+			<th scope="col" colspan="2">Action</th>
+			<th scope="col">Status</th>
+		</tr>
+	</thead>
+	<tbody class="table-secondary">
+		<tr>
+			<td><input type="text" t @bind="regNo" /></td>
+			<td><input type="text" @bind="brand" /></td>
+			<td><input type="text" @bind="odometer" /></td>
+			<td><input type="text" @bind="costKm" /></td>
+			<td>
+				<select @bind="vehicleType" class="form-select form-select-sm" aria-label="Small select example">
+					<option selected>Choose type</option>
+					@foreach (var type in bookingProcessor.VehicleTypeNames())
+					{
+						<option>@type</option>
+					}
+				</select>
+			</td>
+			<td><input type="text" @bind="costDay" /></td>
+			<td colspan="2" style="text-align:right">
+				<button type="button" class="btn btn-outline-primary"
+				@onclick="vehicleType != VehicleTypes.Motorcycle ? ()=>bookingProcessor.Add<Car>(new(bookingProcessor.NextVehicleId, regNo, brand, odometer, vehicleType, costKm, costDay)) :
+				()=>bookingProcessor.Add<Motorcycle>(new(bookingProcessor.NextVehicleId, regNo, brand, odometer, vehicleType, costKm, costDay))">
+					Add
+				</button>
+			</td>
+			@if (bookingProcessor.processing)
+			{
+				<td><span class='badge text-bg-warning'>Processing...</span></td>
+			}
+			@if (!bookingProcessor.processing)
+			{
+				<td></td>
+			}
+		</tr>
+		@foreach (var vehicle in bookingProcessor.Get<Car>())
+		{
+			<tr>
+
+				<td>@vehicle.RegNo</td>
+				<td>@vehicle.Brand</td>
+				<td>@vehicle.Odometer</td>
+				<td>@vehicle.PriceKm</td>
+				<td>@vehicle.VehicleType</td>
+				<td>@vehicle.PriceDay</td>
+				<td>
+					@if (vehicle.VehicleStatus == VehicleStatuses.Booked)
+					{
+						<input type="text" @bind="kmReturned" />
+					}
+					else
+					{
+						<select @bind="customer" class="form-select form-select-sm" aria-label="Small select example">
+							<option selected>Select customer</option>
+							@foreach (var customer in bookingProcessor.Get<Customer>())
+							{
+								<option>@($"{customer.FirstName} {customer.LastName} ({customer.Ssn})")</option>
+							}
+						</select>
+					}
+				</td>
+				<td>
+					@if (vehicle.VehicleStatus == VehicleStatuses.Available)
+					{
+						int customerId = bookingProcessor.Single<Customer>(c => $"{c.FirstName} {c.LastName} ({c.Ssn})" == customer)!.Id;
+						<button @onclick="()=>bookingProcessor.RentVehicle(vehicle.Id, customerId)">Rent</button>
+					}
+					else
+					{
+						<button @onclick="()=>bookingProcessor.ReturnVehicle(vehicle.Id, kmReturned)">Return</button>
+					}
+				</td>
+				<td><span class="badge rounded-pill text-bg-@(vehicle.VehicleStatus.Equals(VehicleStatuses.Available) ? "dark" : "success")">@vehicle.VehicleStatus</span></td>
+			</tr>
+		}
+	</tbody>
+</table>
+<p></p>
+<p class="h5">Bookings</p>
+<table class="table">
+	<thead class="table-primary">
+		<tr>
+			<th scope="col">Reg.No</th>
+			<th scope="col">Customer</th>
+			<th scope="col">Km Rented</th>
+			<th scope="col">Km Returned</th>
+			<th scope="col">Date Rented</th>
+			<th scope="col">Date Returned</th>
+			<th scope="col">Total Cost</th>
+			<th scope="col">Status</th>
+		</tr>
+	</thead>
+
+	<tbody class="table-secondary">
+		@foreach (var booking in bookingProcessor.Get<Booking>())
+		{
+			Vehicle vehicle = bookingProcessor.Single<Vehicle>(v => v.Id == booking.VehicleId)!;
+			Customer customer = bookingProcessor.Single<Customer>(c => c.Id == booking.IPersonId)!;
+			<tr>
+				<td>@vehicle.RegNo</td>
+				<td>@($"{customer.FirstName} {customer.LastName}({customer.Ssn})")</td>
+				<td>@booking.KmRented</td>
+				<td>@booking.KmReturned</td>
+				<td>@booking.DateRented</td>
+				<td>@booking.DateReturned</td>
+				<td>@booking.TotalCost</td>
+				<td><span class="badge text-bg-@(booking.BookingStatus.Equals(BookingStatuses.open) ? "dark" : "success")">@booking.BookingStatus</span></td>
+
+			</tr>
+		}
+	</tbody>
+</table>
+<p></p>
+<p class="h5">Customers</p>
+<table class="table table-sm table-striped">
+	<thead class="table-primary">
+		<tr>
+			<th scope="col" class="col-sm">Social Security No.</th>
+			<th scope="col" class="col-sm">First Name</th>
+			<th scope="col" class="col-sm" colspan="2">Last Name</th>
+		</tr>
+	</thead>
+	<tbody class="table-secondary">
+		<tr>
+			<td><input type="text" @bind="ssn" /></td>
+			<td><input type="text" @bind="firstname" /></td>
+			<td><input type="text" @bind="lastname" /></td>
+			<td><button class="btn btn-outline-primary" @onclick="()=>bookingProcessor.Add<Customer>(new(bookingProcessor.NextPersonId, ssn, firstname, lastname))">Add</button></td>
+		</tr>
+		@foreach (var customer in bookingProcessor.Get<Customer>())
+		{
+			<tr>
+				<td>@customer.Ssn</td>
+				<td>@customer.FirstName</td>
+				<td colspan="2">@customer.LastName</td>
+			</tr>
+		}
+	</tbody>
+</table>
+
+@if (bookingProcessor.Error != string.Empty)
+{
+	<p class="alert alert-warning">@bookingProcessor.Error<button type="button" style="float: right" class="btn-close" aria-label="Close" @onclick="()=> bookingProcessor.Error.Remove(0)"></button></p>
+}
+
+
